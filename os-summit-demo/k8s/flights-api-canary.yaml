@@ -1,11 +1,9 @@
----
-# Source: flights-api/templates/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: flights-api
+  name: flights-api-canary
   labels:
-    name: flights-api
+    name: flights-api-canary
 spec:
   type: "LoadBalancer"
   ports:
@@ -14,28 +12,29 @@ spec:
     targetPort: 3003
   selector:
     app: flights-api
-    version: v1
+    version: v2
 ---
-# Source: flights-api/templates/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flights-api
-  version: v1
+  name: flights-api-canary
+  labels:
+    app: flights-api
+    version: v2
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: flights-api
-      version: v1
+      version: v2
   template:
     metadata:
       labels:
-        app: flights-api
-        version: v1
+        app: flights-api    
+        version: v2
     spec:
       containers:
-        - image: "briaracr.azurecr.io/hackfest/flights-api:1.0"
+        - image: "briaracr.azurecr.io/hackfest/flights-api:1.51"
           imagePullPolicy: Always
           name: flights-api
           resources:
