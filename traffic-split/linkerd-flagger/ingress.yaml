@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: podinfo
+  namespace: test
+  labels:
+    app: podinfo
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  rules:
+  - host: podinfo.brianredmond.io
+    http:
+      paths:
+        - backend:
+            serviceName: podinfo
+            servicePort: 9898

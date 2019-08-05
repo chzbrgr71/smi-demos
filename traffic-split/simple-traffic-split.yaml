@@ -1,0 +1,12 @@
+apiVersion: split.smi-spec.io/v1alpha1
+kind: TrafficSplit
+metadata:
+    name: simple-service
+    namespace: simple-service
+spec:
+    service: simple-service
+    backends:
+    - service: simple-service-v1
+      weight: 900m
+    - service: simple-service-v2
+      weight: 100m

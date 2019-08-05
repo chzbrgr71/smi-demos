@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: error-injector
+  labels:
+    app: error-injector
+spec:
+  selector:
+    matchLabels:
+      app: error-injector
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: error-injector
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+          - containerPort: 80
+            name: nginx
+            protocol: TCP
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: error-injector-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: error-injector
+  name: error-injector
+spec:
+  clusterIP: None
+  ports:
+  - name: service
+    port: 7002
+    protocol: TCP
+    targetPort: nginx
+  selector:
+    app: error-injector
+  type: ClusterIP
+---
+apiVersion: v1
+data:
+ nginx.conf: |2
+
+    events {
+        worker_connections  1024;
+    }
+
+    http {
+        server {
+            location / {
+                return 500;
+            }
+        }
+    }
+kind: ConfigMap
+metadata:
+  name: error-injector-config

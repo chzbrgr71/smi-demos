@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: podinfo-external
+  labels:
+    name: podinfo-external
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 80
+    targetPort: 9898
+  selector:
+    app: podinfo
+    app: podinfo-primary

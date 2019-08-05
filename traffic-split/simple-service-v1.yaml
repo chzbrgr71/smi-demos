@@ -1,0 +1,38 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: simple-service
+    version: v1
+  name: simple-service-v1
+  namespace: simple-service
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: simple-service
+        version: v1
+    spec:
+      containers:
+      - image: jonathanbeber/simple-service:v1
+        imagePullPolicy: IfNotPresent
+        name: simple-service-v1
+        ports:
+          - containerPort: 8000
+            name: http
+            protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-service-v1
+  namespace: simple-service
+spec:
+  selector:
+    app: simple-service
+    version: v1
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: http
