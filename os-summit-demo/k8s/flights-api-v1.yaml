@@ -1,9 +1,24 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: flights-api-canary
+  name: flights-api
   labels:
-    name: flights-api-canary
+    name: flights-api
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 3003
+    targetPort: 3003
+  selector:
+    app: flights-api
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flights-api-v1
+  labels:
+    name: flights-api-v1
 spec:
   type: ClusterIP
   ports:
@@ -12,29 +27,27 @@ spec:
     targetPort: 3003
   selector:
     app: flights-api
-    version: v2
+    version: v1
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flights-api-canary
-  labels:
-    app: flights-api
-    version: v2
+  name: flights-api
+  version: v1
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: flights-api
-      version: v2
+      version: v1
   template:
     metadata:
       labels:
-        app: flights-api    
-        version: v2
+        app: flights-api
+        version: v1
     spec:
       containers:
-        - image: "briaracr.azurecr.io/hackfest/flights-api:1.51"
+        - image: "briaracr.azurecr.io/hackfest/flights-api:1.0"
           imagePullPolicy: Always
           name: flights-api
           resources:
