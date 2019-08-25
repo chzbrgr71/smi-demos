@@ -32,8 +32,10 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flights-api
-  version: v1
+  name: flights-api-v1
+  labels:
+    app: flights-api
+    version: v1
 spec:
   replicas: 1
   selector:

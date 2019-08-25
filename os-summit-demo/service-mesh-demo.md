@@ -21,10 +21,11 @@
 * Run app
 
     ```bash
-    # get data-api running first
-    kubectl apply -f ./k8s/data-api.yaml -n tracker
-
     kubectl apply -f ./k8s/ -n tracker
+
+    OR
+    kubectl apply -f ./data-api.yaml -n tracker
+    kubectl apply -f ./data-api-2.yaml -n tracker
     ```
 
 * Generate activity (Artillery)
@@ -42,7 +43,7 @@
     export QUAKES_IP=$(kubectl get svc --namespace tracker quakes-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}') && echo $QUAKES_IP
     export WEATHER_IP=$(kubectl get svc --namespace tracker weather-api -o jsonpath='{.status.loadBalancer.ingress[0].ip}') && echo $WEATHER_IP
 
-    for i in 1 2 3; do
+    for i in 1 2; do
         az container create --name flights-load-test${i} -l westus --image chzbrgr71/loadtest:v2.0 --resource-group aci -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=$FLIGHTS_IP:3003/latest
         az container create --name quakes-load-test${i} -l westus --image chzbrgr71/loadtest:v2.0 --resource-group aci -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=$QUAKES_IP:3012/latest
         az container create --name weather-load-test${i} -l westus --image chzbrgr71/loadtest:v2.0 --resource-group aci -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=$WEATHER_IP:3015/latest
@@ -65,6 +66,8 @@
 
     linkerd install | kubectl apply -f -
 
+    linkerd check
+
     kubectl -n linkerd get deploy
 
     linkerd dashboard
@@ -77,16 +80,19 @@
     ```bash
     # data-api first
     linkerd inject ./k8s/data-api.yaml | kubectl apply -n tracker -f -
+    linkerd inject ./data-api-2.yaml | kubectl apply -n tracker -f -
 
     # the rest
     linkerd inject ./k8s/ | kubectl apply -n tracker -f -
 
     # 1 by 1
-    linkerd inject ./k8s/data-api.yaml | kubectl apply -n tracker -f -
-    linkerd inject ./k8s/flights-api.yaml | kubectl apply -n tracker -f -
+    linkerd inject ./k8s/data-api-2.yaml | kubectl apply -n tracker -f -
+    linkerd inject ./k8s/flights-api-canary.yaml | kubectl apply -n tracker -f -
+    linkerd inject ./k8s/flights-api-v1.yaml | kubectl apply -n tracker -f -
     linkerd inject ./k8s/quakes-api.yaml | kubectl apply -n tracker -f -
     linkerd inject ./k8s/weather-api.yaml | kubectl apply -n tracker -f -
     linkerd inject ./k8s/service-tracker-ui.yaml | kubectl apply -n tracker -f -
+    linkerd inject ./k8s/debug-pod.yaml | kubectl apply -n tracker -f -
     ```
 
 * Show Dashboard
@@ -103,6 +109,8 @@
     linkerd stat deployments -n tracker
 
     linkerd top namespace/tracker
+
+    linkerd edges pod -n tracker
     ```
 
 * SMI Traffic Split
@@ -143,7 +151,7 @@
     * SMI Traffic Split
 
         ```bash
-        kubectl apply -f ./k8s/traffic-split.yaml -n tracker
+        kubectl apply -f ./traffic-split.yaml -n tracker
         ```
 
 #### Clean-up
@@ -151,7 +159,7 @@
 * Stop load testing
 
     ```bash
-    for i in 1 2 3; do
+    for i in 1 2; do
         az container delete --yes --resource-group aci --name flights-load-test${i}
         az container delete --yes --resource-group aci --name quakes-load-test${i}
         az container delete --yes --resource-group aci --name weather-load-test${i}
@@ -161,7 +169,20 @@
 * Unmesh app
 
     ```bash
-    linkerd inject ./k8s/ | kubectl delete -n tracker -f -
+    # 1 by 1
+    linkerd inject ./k8s/data-api-2.yaml | kubectl delete -n tracker -f -
+    linkerd inject ./k8s/flights-api-canary.yaml | kubectl delete -n tracker -f -
+    linkerd inject ./k8s/flights-api-v1.yaml | kubectl delete -n tracker -f -
+    linkerd inject ./k8s/quakes-api.yaml | kubectl delete -n tracker -f -
+    linkerd inject ./k8s/weather-api.yaml | kubectl delete -n tracker -f -
+    linkerd inject ./k8s/service-tracker-ui.yaml | kubectl delete -n tracker -f -
+    linkerd inject ./k8s/debug-pod.yaml | kubectl delete -n tracker -f -    
+    ```
+
+    ```bash
+    kubectl delete -f ./traffic-split.yaml -n tracker
+
+    kubectl delete -f ./k8s/ -n tracker
     ```
 
 * Uninstall Linkerd
