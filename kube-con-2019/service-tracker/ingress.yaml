@@ -63,3 +63,25 @@ spec:
         - backend:
             serviceName: weather-api
             servicePort: 3015  
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: service-tracker-ui
+  namespace: hackfest
+  labels:
+    app: service-tracker-ui
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header l5d-dst-override service-tracker-ui.hackfest.svc.cluster.local:8080;
+      grpc_set_header l5d-dst-override service-tracker-ui.hackfest.svc.cluster.local:8080;
+spec:
+  rules:
+  - host: service-tracker-ui.brianredmond.io
+    http:
+      paths:
+        - backend:
+            serviceName: service-tracker-ui
+            servicePort: 3015              

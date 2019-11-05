@@ -97,13 +97,19 @@ In this session, I will dig deep into how you can integrate Service Mesh into de
     kubectl apply -f canary.yaml
 
     # setup demo
-    watch kubectl get deploy,pod,svc,ingress,canary -n hackfest
+    kubectl get deploy,pod,ingress,canary,trafficsplit -n hackfest
     linkerd dashboard
+    http://flights-api.brianredmond.io/
 
     # run upgrade with canary test
     kubectl -n hackfest set image deployment/flights-api flights-api=briaracr.azurecr.io/hackfest/flights-api:1.1.6
 
+    kubectl -n hackfest set image deployment/flights-api flights-api=briaracr.azurecr.io/hackfest/flights-api:1.1.7
+
+    kubectl -n hackfest set image deployment/flights-api flights-api=briaracr.azurecr.io/hackfest/flights-api:1.1.8
+
     # load test
+    kubectl exec -it flagger-loadtester-8649c9d49f-kk5nx -n hackfest bash
     while true; do curl http://flights-api.hackfest.svc:3003/; echo $'\n'; sleep 1; done
     ```
 
@@ -111,7 +117,7 @@ In this session, I will dig deep into how you can integrate Service Mesh into de
 
     ```bash
     export ACRNAME=briaracr
-    export IMAGE_TAG=1.1.6
+    export IMAGE_TAG=1.1.8
 
     az acr build -t hackfest/flights-api:$IMAGE_TAG -r $ACRNAME --no-logs ~/source/kubernetes-hackfest/app/flights-api
 
@@ -120,6 +126,23 @@ In this session, I will dig deep into how you can integrate Service Mesh into de
     az acr build -t hackfest/weather-api:$IMAGE_TAG -r $ACRNAME --no-logs ~/source/kubernetes-hackfest/app/weather-api
     ```
 
+* Load Tester ACI pods
+
+    ```bash
+    # run all
+    for i in 1 2 3; do
+        #az container create --name flights-load-test${i} -l centralus --image chzbrgr71/loadtest:v2.0 --resource-group kubecon-2019 -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=flights-api.brianredmond.io/latest
+        az container create --name quakes-load-test${i} -l centralus --image chzbrgr71/loadtest:v2.0 --resource-group kubecon-2019 -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=quakes-api.brianredmond.io/latest
+        az container create --name weather-load-test${i} -l centralus --image chzbrgr71/loadtest:v2.0 --resource-group kubecon-2019 -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=weather-api.brianredmond.io/latest
+    done
+
+    # delete all
+    for i in 1 2 3; do
+        #az container delete --yes --resource-group kubecon-2019 --name flights-load-test${i}
+        az container delete --yes --resource-group kubecon-2019 --name quakes-load-test${i}
+        az container delete --yes --resource-group kubecon-2019 --name weather-load-test${i}
+    done    
+    ```
 
 #### Resources
 

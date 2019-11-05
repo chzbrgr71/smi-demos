@@ -4,6 +4,7 @@ metadata:
   name: flights-api
   namespace: hackfest
 spec:
+  provider: linkerd
   # deployment reference
   targetRef:
     apiVersion: apps/v1
@@ -24,10 +25,10 @@ spec:
     threshold: 5
     # max traffic percentage routed to canary
     # percentage (0-100)
-    maxWeight: 50
+    maxWeight: 70
     # canary increment step
     # percentage (0-100)
-    stepWeight: 5
+    stepWeight: 10
     # Linkerd Prometheus checks
     metrics:
     - name: request-success-rate
@@ -48,7 +49,7 @@ spec:
         timeout: 30s
         metadata:
           type: bash
-          cmd: "curl http://flights-api:3003"
+          cmd: "curl http://flights-api.hackfest.svc.cluster.local:3003"
       - name: load-test
         type: rollout
         url: http://flagger-loadtester.hackfest/

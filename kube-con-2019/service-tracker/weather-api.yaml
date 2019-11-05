@@ -7,7 +7,7 @@ metadata:
   labels:
     name: weather-api
 spec:
-  type: "LoadBalancer"
+  type: "ClusterIP"
   ports:
   - name: http
     port: 3015
