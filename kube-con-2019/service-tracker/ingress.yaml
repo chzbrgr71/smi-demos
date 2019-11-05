@@ -1,0 +1,65 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: flights-api
+  namespace: hackfest
+  labels:
+    app: flights-api
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header l5d-dst-override flights-api.hackfest.svc.cluster.local:3003;
+      grpc_set_header l5d-dst-override flights-api.hackfest.svc.cluster.local:3003;
+spec:
+  rules:
+  - host: flights-api.brianredmond.io
+    http:
+      paths:
+        - backend:
+            serviceName: flights-api
+            servicePort: 3003
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: quakes-api
+  namespace: hackfest
+  labels:
+    app: quakes-api
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header l5d-dst-override quakes-api.hackfest.svc.cluster.local:3012;
+      grpc_set_header l5d-dst-override quakes-api.hackfest.svc.cluster.local:3012;
+spec:
+  rules:
+  - host: quakes-api.brianredmond.io
+    http:
+      paths:
+        - backend:
+            serviceName: quakes-api
+            servicePort: 3012
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: weather-api
+  namespace: hackfest
+  labels:
+    app: weather-api
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header l5d-dst-override weather-api.hackfest.svc.cluster.local:3015;
+      grpc_set_header l5d-dst-override weather-api.hackfest.svc.cluster.local:3015;
+spec:
+  rules:
+  - host: weather-api.brianredmond.io
+    http:
+      paths:
+        - backend:
+            serviceName: weather-api
+            servicePort: 3015  
