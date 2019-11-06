@@ -49,9 +49,9 @@ spec:
         timeout: 30s
         metadata:
           type: bash
-          cmd: "curl http://flights-api.hackfest.svc.cluster.local:3003"
+          cmd: "curl -s http://flights-api-canary.hackfest:3003/status | grep payload"
       - name: load-test
         type: rollout
         url: http://flagger-loadtester.hackfest/
         metadata:
-          cmd: "hey -z 2m -q 10 -c 2 http://flights-api.hackfest.svc.cluster.local:3003/status"
+          cmd: "hey -z 2m -q 10 -c 2 http://flights-api.hackfest:3003/status"

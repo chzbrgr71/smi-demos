@@ -97,11 +97,11 @@ In this session, I will dig deep into how you can integrate Service Mesh into de
     kubectl apply -f canary.yaml
 
     # setup demo
-    kubectl get deploy,pod,ingress,canary,trafficsplit -n hackfest
+    watch kubectl get deploy,pod,service,canary,trafficsplit -n hackfest
     linkerd dashboard
     http://flights-api.brianredmond.io/
 
-    # run upgrade with canary test
+    # run upgrades with canary test
     kubectl -n hackfest set image deployment/flights-api flights-api=briaracr.azurecr.io/hackfest/flights-api:1.1.6
 
     kubectl -n hackfest set image deployment/flights-api flights-api=briaracr.azurecr.io/hackfest/flights-api:1.1.7
@@ -111,6 +111,15 @@ In this session, I will dig deep into how you can integrate Service Mesh into de
     # load test
     kubectl exec -it flagger-loadtester-8649c9d49f-kk5nx -n hackfest bash
     while true; do curl http://flights-api.hackfest.svc:3003/; echo $'\n'; sleep 1; done
+    curl -sd http://flights-api.hackfest:3003/status | grep latest
+    ```
+
+* Reset demo
+
+    ```bash
+    kubectl delete canary flights-api -n hackfest
+    kubectl delete deploy flights-api -n hackfest
+    kubectl apply -f ./flights-api.yaml --namespace hackfest
     ```
 
 * Build new container image - Manually
