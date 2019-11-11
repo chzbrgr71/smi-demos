@@ -25,7 +25,7 @@ spec:
     threshold: 5
     # max traffic percentage routed to canary
     # percentage (0-100)
-    maxWeight: 70
+    maxWeight: 50
     # canary increment step
     # percentage (0-100)
     stepWeight: 10
@@ -49,7 +49,7 @@ spec:
         timeout: 30s
         metadata:
           type: bash
-          cmd: "curl -s http://flights-api-canary.hackfest:3003/status | grep payload"
+          cmd: "curl -s http://flights-api-canary.hackfest:3003/status | grep latest"
       - name: load-test
         type: rollout
         url: http://flagger-loadtester.hackfest/
