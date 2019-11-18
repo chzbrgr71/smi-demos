@@ -41,6 +41,9 @@ In this session, I will dig deep into how you can integrate Service Mesh into de
     kubectl apply -k github.com/weaveworks/flagger//kustomize/linkerd
     ```
 
+    Add instructions to enable Slack for Flagger
+    https://docs.flagger.app/usage/alerting 
+
 * Flagger Sample (podinfo)
 
     ```bash
@@ -81,11 +84,15 @@ In this session, I will dig deep into how you can integrate Service Mesh into de
 
 * Service Tracker Demo
 
+    > Follow steps to setup pre-requisites in Azure as described here. https://github.com/chzbrgr71/kubernetes-hackfest/blob/master/labs/build-application/README.md 
+
     ```bash
     # install app
+    kubectl create ns hackfest
     kubectl annotate namespace hackfest linkerd.io/inject=enabled
     
     kubectl apply -f tester.yaml --namespace hackfest
+    kubectl create secret generic cosmos-db-secret --from-literal=user=$MONGODB_USER --from-literal=pwd=$MONGODB_PASSWORD --from-literal=appinsights=$APPINSIGHTS_INSTRUMENTATIONKEY -n hackfest
 
     kubectl apply -f ./data-api.yaml --namespace hackfest
     kubectl apply -f ./flights-api.yaml --namespace hackfest
@@ -98,22 +105,24 @@ In this session, I will dig deep into how you can integrate Service Mesh into de
     kubectl apply -f canary.yaml
 
     # setup demo
+    deploy ACIs
+    Github pages with branch https://github.com/chzbrgr71/kubernetes-hackfest 
     watch kubectl get deploy,pod,service,canary,trafficsplit -n hackfest
     linkerd dashboard
     http://flights-api.brianredmond.io/status 
+    http://23.99.133.108:8080 
+    kubectl exec -it flagger-loadtester-8649c9d49f-kk5nx -n hackfest bash
+    while true; do curl http://flights-api.hackfest.svc:3003/status; echo $'\n'; sleep 1; done
+    Slack
 
     # run upgrades with canary test
     kubectl -n hackfest set image deployment/flights-api flights-api=briaracr.azurecr.io/hackfest/flights-api:1.1.6
-
-    kubectl -n hackfest set image deployment/flights-api flights-api=briaracr.azurecr.io/hackfest/flights-api:1.1.7
-
-    kubectl -n hackfest set image deployment/flights-api flights-api=briaracr.azurecr.io/hackfest/flights-api:1.1.8
 
     kubectl -n hackfest set image deployment/flights-api flights-api=briaracr.azurecr.io/hackfest/flights-api:1.1.95-error
 
     kubectl describe canary flights-api -n hackfest
 
-    # load test
+    # test
     kubectl exec -it flagger-loadtester-8649c9d49f-kk5nx -n hackfest bash
     while true; do curl http://flights-api.hackfest.svc:3003/status; echo $'\n'; sleep 1; done
     curl -s http://flights-api-canary.hackfest:3003/status | grep payload
@@ -148,6 +157,13 @@ In this session, I will dig deep into how you can integrate Service Mesh into de
         #az container create --name flights-load-test${i} -l centralus --image chzbrgr71/loadtest:v2.0 --resource-group kubecon-2019 -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=flights-api.brianredmond.io/latest
         az container create --name quakes-load-test${i} -l centralus --image chzbrgr71/loadtest:v2.0 --resource-group kubecon-2019 -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=quakes-api.brianredmond.io/latest
         az container create --name weather-load-test${i} -l centralus --image chzbrgr71/loadtest:v2.0 --resource-group kubecon-2019 -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=weather-api.brianredmond.io/latest
+    done
+
+    # backup cluster
+    for i in 1 2; do
+        #az container create --name flights-load-test${i} -l centralus --image chzbrgr71/loadtest:v2.0 --resource-group kubecon-2019 -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=flights-api.brianredmond.io/latest
+        az container create --name quakes-load-test${i} -l southcentralus --image chzbrgr71/loadtest:v2.0 --resource-group kubecon-2019 -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=23.99.203.105:3012/latest
+        az container create --name weather-load-test${i} -l southcentralus --image chzbrgr71/loadtest:v2.0 --resource-group kubecon-2019 -o tsv --cpu 1 --memory 1 --environment-variables load_duration=-1 load_rate=2 load_url=52.173.206.133:3015/latest
     done
 
     # delete all
