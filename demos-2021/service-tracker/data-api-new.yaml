@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: data-api-new
+  labels:
+    name: data-api-new
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 3009
+    targetPort: 3009
+  selector:
+    app: data-api-new
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-api-new
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-api-new
+  template:
+    metadata:
+      labels:
+        app: data-api-new
+    spec:
+      containers:
+        - image: chzbrgr71/data-api:v1.2
+          imagePullPolicy: Always
+          name: data-api-new
+          env:
+            - name: MONGODB_USER
+              value: "dbuser"
+            - name: MONGODB_PASSWORD
+              value: "dbpassword"
+            - name: MONGODB_IP
+              value: "mongodb.tracker.svc.cluster.local"
+            - name: MONGODB_PORT
+              value: "27017"
+          ports:
+          - containerPort: 3009
+            protocol: TCP
+      restartPolicy: Always

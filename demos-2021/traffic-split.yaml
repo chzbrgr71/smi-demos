@@ -1,0 +1,13 @@
+apiVersion: split.smi-spec.io/v1alpha1
+kind: TrafficSplit
+metadata:
+  name: canary
+spec:
+  # The root service that clients use to connect to the destination application.
+  service: data-api
+  # Services inside the namespace with their own selectors, endpoints and configuration.
+  backends:
+  - service: data-api
+    weight: 90
+  - service: data-api-new
+    weight: 10

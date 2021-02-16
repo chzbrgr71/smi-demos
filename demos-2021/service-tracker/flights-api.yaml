@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: flights-api
+  labels:
+    name: flights-api
+spec:
+  type: LoadBalancer
+  ports:
+  - name: http
+    port: 3003
+    targetPort: 3003
+  selector:
+    app: flights-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flights-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flights-api
+  template:
+    metadata:
+      labels:
+        app: flights-api
+    spec:
+      containers:
+        - image: chzbrgr71/flights-api:v1.1
+        #- image: docker.pkg.github.com/chzbrgr71/service-tracker/flights-api:v1.1
+          imagePullPolicy: Always
+          name: flights-api
+          env:
+            - name: DATA_SERVICE_URI
+              value: http://data-api.tracker.svc.cluster.local:3009/
+          ports:
+          - containerPort: 3003
+            protocol: TCP
+      restartPolicy: Always
