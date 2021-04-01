@@ -9,6 +9,7 @@ spec:
   - name: mongodb
     port: 27017
     protocol: TCP
+    appProtocol: tcp
     targetPort: mongodb
   selector:
     app: mongodb

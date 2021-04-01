@@ -7,12 +7,12 @@
 
     ```bash
     export RGNAME=service-mesh
-    export LOCATION=centralus
-    export CLUSTERNAME=service-mesh-demos
+    export LOCATION=eastus2
+    export CLUSTERNAME=briar-aks-osm
     export K8SVERSION=1.19.7
     export VMSIZE=Standard_D2_v2
     export NODECOUNT=5
-    export AZUREMONITOR=/subscriptions/471d33fd-a776-405b-947c-467c291dc741/resourcegroups/aks-testing/providers/microsoft.operationalinsights/workspaces/briarakstesting
+    export AZUREMONITOR=/subscriptions/471d33fd-a776-405b-947c-467c291dc741/resourcegroups/monitoring/providers/microsoft.operationalinsights/workspaces/briar-aks-monitoring
 
     az group create --name $RGNAME --location $LOCATION
 
@@ -24,11 +24,19 @@
     --location $LOCATION \
     --vm-set-type VirtualMachineScaleSets \
     --enable-managed-identity \
+    --node-osdisk-type Ephemeral \
+    --node-osdisk-size 30 \
+    --network-plugin azure \
     --workspace-resource-id $AZUREMONITOR \
-    --enable-addons monitoring \
+    --enable-addons monitoring,open-service-mesh \
     --no-wait
 
     az aks get-credentials -n $CLUSTERNAME -g $RGNAME
+
+    az aks list -g $RGNAME -o json | jq -r '.[].addonProfiles.openServiceMesh.enabled'
+
+    PROM_POD_NAME=$(kubectl get pods -l "app=prometheus,component=server" -o jsonpath="{.items[0].metadata.name}")
+    kubectl --namespace default port-forward $PROM_POD_NAME 9090
     ```
 
 ### Install Service Mesh
@@ -45,6 +53,21 @@
     ```
 
 * Open Service Mesh
+
+    ```bash
+    osm install \
+      --enable-permissive-traffic-policy \
+      --deploy-grafana \
+      --deploy-jaeger \
+      --deploy-prometheus \
+      --enable-egress
+
+    for i in bookstore bookbuyer bookthief bookwarehouse; do kubectl delete ns $i; done
+    ```
+
+* TCP Route for Mongo
+
+https://github.com/servicemeshinterface/smi-spec/blob/main/apis/traffic-access/v1alpha3/traffic-access.md#example-implementation-for-l7 
 
 ### Demo
 
@@ -64,7 +87,16 @@
     ```bash
     # install app
     kubectl create ns tracker
+
+    # linkerd
     kubectl annotate namespace tracker linkerd.io/inject=enabled
+
+    # osm
+    kubectl label namespace tracker openservicemesh.io/monitored-by=osm
+    kubectl annotate namespace tracker openservicemesh.io/sidecar-injection=enabled
+
+    kubectl label namespace nginx openservicemesh.io/monitored-by=osm
+    kubectl annotate namespace nginx openservicemesh.io/sidecar-injection=enabled
 
     kubectl apply -f ./service-tracker/mongodb.yaml --namespace tracker
     kubectl apply -f ./service-tracker/data-api.yaml --namespace tracker
@@ -74,8 +106,8 @@
     kubectl apply -f ./service-tracker/service-tracker-ui.yaml --namespace tracker
 
     # SMI
-    kubectl apply -f traffic-split.yaml --namespace tracker
     kubectl apply -f ./service-tracker/data-api-new.yaml --namespace tracker
+    kubectl apply -f traffic-split.yaml --namespace tracker
     ```
 
 * Load Test

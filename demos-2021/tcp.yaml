@@ -1,0 +1,25 @@
+kind: TCPRoute
+apiVersion: specs.smi-spec.io/v1alpha4
+metadata:
+  name: tcp-ports
+spec:
+  matches:
+    ports:
+    - 27017
+---
+kind: TrafficTarget
+apiVersion: access.smi-spec.io/v1alpha3
+metadata:
+  name: protocal-specific
+spec:
+  destination:
+    kind: ServiceAccount
+    name: server
+    namespace: tracker
+  rules:
+  - kind: TCPRoute
+    name: tcp-ports
+  sources:
+  - kind: ServiceAccount
+    name: client
+    namespace: tracker
